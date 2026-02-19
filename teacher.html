@@ -36,29 +36,53 @@ svg{max-width:100%}
 .variant-btn{padding:8px 0;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:var(--ink);cursor:pointer}
 .variant-btn.active{border-color:rgba(122,162,255,.7);background:rgba(122,162,255,.18)}
 
-/* ====== PRINT ====== */
+/* ===== ПЕЧАТЬ / PDF ===== */
+.print-only{display:none}
+.no-print{}
+.print-page-break{}
+
+/* аккуратные разрывы внутри карточек */
+.card{break-inside:avoid; page-break-inside:avoid;}
+table{break-inside:auto;}
+thead{display:table-header-group;}
+tfoot{display:table-footer-group;}
+
 @media print{
-  :root{ --bg:#fff; --card:#fff; --ink:#000; --muted:#333; --accent:#000; }
-  body{ background:#fff !important; color:#000 !important; }
-  header{ position:static !important; background:#fff !important; border-bottom:1px solid #ddd !important; backdrop-filter:none !important; }
-  .container{ max-width:none !important; padding:12px !important; }
-  .card{ background:#fff !important; border:1px solid #ddd !important; box-shadow:none !important; }
-  .variant-grid{ display:none !important; }
-  button, select, input{ display:none !important; }
-  .note{ color:#000 !important; }
-  table{ font-size:12px !important; }
-  th,td{ border-bottom:1px solid #ddd !important; color:#000 !important; }
-  th{ color:#000 !important; }
-  svg{ page-break-inside:avoid; }
-  .card{ break-inside:avoid; page-break-inside:avoid; }
-  #printHeader{
-    display:block !important;
-    border:1px solid #ddd;
-    padding:10px 12px;
-    margin:0 0 12px 0;
+  @page{margin:14mm;}
+
+  header,
+  .no-print{
+    display:none !important;
   }
+  .print-only{display:block !important;}
+
+  .print-page-break{
+    break-before: page;
+    page-break-before: always;
+  }
+
+  body{
+    background:#fff !important;
+    color:#000 !important;
+  }
+  .container{
+    max-width:none !important;
+    padding:0 !important;
+  }
+  .card{
+    background:#fff !important;
+    color:#000 !important;
+    box-shadow:none !important;
+    border:1px solid #bbb !important;
+  }
+  th,td{border-bottom:1px solid #ddd !important;}
+  th{color:#000 !important;}
+  small,.note{color:#333 !important;}
+
+  /* чтобы SVG/подписи не “бледнели” */
+  svg text{fill:#000 !important;}
+  svg line{stroke:#000 !important;}
 }
-#printHeader{ display:none; }
 </style>
 </head>
 <body>
@@ -76,21 +100,17 @@ svg{max-width:100%}
 
 <div class="container">
 
-  <!-- ПЕЧАТНАЯ ШАПКА (видна только при печати) -->
-  <div class="card" id="printHeader">
-    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
-      <div>
-        <div style="font-weight:700;font-size:14px;">Генератор комплектов — преподаватель</div>
-        <div style="font-size:12px;">Результаты расчёта (печать)</div>
-      </div>
-      <div style="text-align:right;font-size:12px;">
-        <div>Вариант: <b id="printVar">—</b></div>
-        <div>Дата: <b id="printDate">—</b></div>
-      </div>
-    </div>
+  <!-- печатная шапка (видна только в PDF/печати) -->
+  <div class="print-only" style="margin:0 0 10px 0;">
+    <h2 style="margin:0 0 4px 0; font-size:16pt;">
+      Результаты расчётов курсовой — вариант № <span id="printVar">1</span>
+    </h2>
+    <div style="font-size:11pt;">Дата печати: <span id="printDate"></span></div>
+    <hr/>
   </div>
 
-  <div class="card">
+  <!-- Панель управления (скрывается при печати) -->
+  <div class="card no-print">
     <div class="row" style="justify-content:space-between;align-items:flex-end;">
       <div class="note" style="max-width:740px;">
         Выберите <b>номер варианта (1–30)</b>. После выбора формируется <b>единый комплект исходных данных</b> для трёх задач:
@@ -103,15 +123,15 @@ svg{max-width:100%}
         </div>
         <div>
           <label>&nbsp;</label>
-          <button id="btnKit">Применить вариант</button>
+          <button id="btnKit" type="button">Применить вариант</button>
         </div>
         <div>
           <label>&nbsp;</label>
-          <button class="secondary" id="btnCSV">Скачать все CSV</button>
+          <button class="secondary" id="btnCSV" type="button">Скачать все CSV</button>
         </div>
         <div>
           <label>&nbsp;</label>
-          <button class="secondary" id="btnPrint">Печать результатов</button>
+          <button class="secondary" id="btnPrint" type="button">Печать / PDF</button>
         </div>
       </div>
     </div>
@@ -145,7 +165,7 @@ svg{max-width:100%}
     </div>
   </div>
 
-  <div class="card" id="sec2">
+  <div class="card print-page-break" id="sec2">
     <h3 style="margin:0 0 8px 0;">Раздел 2. Вызовы по территории (100 участков, сетка 10×10)</h3>
     <div class="kpi" id="s2kpi"></div>
     <hr/>
@@ -165,7 +185,7 @@ svg{max-width:100%}
     </div>
   </div>
 
-  <div class="card" id="sec3">
+  <div class="card print-page-break" id="sec3">
     <h3 style="margin:0 0 8px 0;">Раздел 3. Времена реагирования (4 распределения по интервалам, N=100)</h3>
     <div class="kpi" id="s3kpi"></div>
     <hr/>
@@ -187,4 +207,440 @@ svg{max-width:100%}
 </div>
 
 <script>
-const SECTION1_VARIANTS = {"1": [{"year": 2019, "dow": "пн", "label": "2019 пн", "fires": 65112.0}, {"year": 2019, "dow": "вт", "label": "2019 вт", "fires": 65031.0}, {"year": 2019, "dow": "ср", "label": "2019 ср", "fires": 64572.0}, {"year": 2019, "dow": "чт", "label": "2019 чт", "fires": 64644.0}, {"year": 2019, "dow": "пт", "label": "2019 пт", "fires": 65180.0}, {"year": 2019, "dow": "сб", "label": "2019 сб", "fires": 73216.0}, {"year": 2019, "dow": "вскр", "label": "2019 вскр", "fires": 73671.0}, {"year": 2020, "dow": "пн", "label": "2020 пн", "fires": 61291.0}, {"year": 2020, "dow": "вт", "label": "2020 вт", "fires": 58590.0}, {"year": 2020, "dow": "ср", "label": "2020 ср", "fires": 60495.0}, {"year": 2020, "dow": "чт", "label": "2020 чт", "fires": 61158.0}, {"year": 2020, "dow": "пт", "label": "2020 пт", "fires": 60283.0}, {"year": 2020, "dow": "сб", "label": "2020 сб", "fires": 68270.0}, {"year": 2020, "dow": "вскр", "label": "2020 вскр", "fires": 69219.0}, {"year": 2021, "dow": "пн", "label": "2021 пн", "fires": 56024.0}, {"year": 2021, "dow": "вт", "label": "2021 вт", "fires": 53725.0}, {"year": 2021, "dow": "ср", "label": "2021 ср", "fires": 52014.0}, {"year": 2021, "dow": "чт", "label": "2021 чт", "fires": 51877.0}, {"year": 2021, "dow": "пт", "label": "2021 пт", "fires": 55242.0}, {"year": 2021, "dow": "сб", "label": "2021 сб", "fires": 60697.0}, {"year": 2021, "dow": "вскр", "label": "2021 вскр", "fires": 61185.0}], "2": [{"year": 2019, "dow": "пн", "label": "2019 пн", "fires": 65462.380074470326}, {"year": 2019, "dow": "вт", "label": "2019 вт", "fires": 65089.17861844688}, {"year": 2019, "dow": "ср", "label": "2019 ср", "fires": 65350.919117404555}, {"year": 2019, "dow": "чт", "label": "2019 чт", "fires": 64647.3999361937}, {"year": 2019, "dow": "пт", "label": "2019 пт", "fires": 65304.30018087598}, {"year": 2019, "dow": "сб", "label": "2019 сб", "fires": 65818.89304070263}, {"year": 2019, "dow": "вскр", "label": "2019 вскр", "fires": 73975.46006762922}, {"year": 2020, "dow": "пн", "label": "2020 пн", "fires": 64952.10249648602}, {"year": 2020, "dow": "вт", "label": "2020 вт", "fires": 59064.0189619438}, {"year": 2020, "dow": "ср", "label": "2020 ср", "fires": 58998.025860274465}, {"year": 2020, "dow": "чт", "label": "2020 чт", "fires": 61413.24194219662}, {"year": 2020, "dow": "пт", "label": "2020 пт", "fires": 61119.0574572214}, {"year": 2020, "dow": "сб", "label": "2020 сб", "fires": 65142.755078679445}, {"year": 2020, "dow": "вскр", "label": "2020 вскр", "fires": 69324.07025917877}, {"year": 2021, "dow": "пн", "label": "2021 пн", "fires": 65239.93585793768}, {"year": 2021, "dow": "вт", "label": "2021 вт", "fires": 55247.203934402656}, {"year": 2021, "dow": "ср", "label": "2021 ср", "fires": 53375.60004519739}, {"year": 2021, "dow": "чт", "label": "2021 чт", "fires": 52013.427937006185}, {"year": 2021, "dow": "пт", "label": "2021 пт", "fires": 53155.43040334574}, {"year": 2021, "dow": "сб", "label": "2021 сб", "fires": 59230.3266582684}, {"year": 2021, "dow": "вскр", "label": "2021 вскр", "fires": 61013.669414276665}], "3": [{"year": 2019, "dow": "пн", "label": "2019 пн", "fires": 65157.599723906664}, {"year": 2019, "dow": "вт", "label": "2019 вт", "fires": 65476.15192553747}, {"year": 2019, "dow": "ср", "label": "2019 ср", "fires": 65327.73003613227}, {"year": 2019, "dow": "чт", "label": "2019 чт", "fires": 65462.59705877297}, {"year": 2019, "dow": "пт", "label": "2019 пт", "fires": 65171.266070235055}, {"year": 2019, "dow": "сб", "label": "2019 сб", "fires": 69150.45350222706}, {"year": 2019, "dow": "вскр", "label": "2019 вскр", "fires": 73672.94139723828}, {"year": 2020, "dow": "пн", "label": "2020 пн", "fires": 73246.88814341759}, {"year": 2020, "dow": "вт", "label": "2020 вт", "fires": 59009.89494211266}, {"year": 2020, "dow": "ср", "label": "2020 ср", "fires": 59929.681881967124}, {"year": 2020, "dow": "чт", "label": "2020 чт", "fires": 61240.73945223741}, {"year": 2020, "dow": "пт", "label": "2020 пт", "fires": 60688.37416719986}, {"year": 2020, "dow": "сб", "label": "2020 сб", "fires": 65150.40218722815}, {"year": 2020, "dow": "вскр", "label": "2020 вскр", "fires": 69127.36475890786}, {"year": 2021, "dow": "пн", "label": "2021 пн", "fires": 59458.107403896065}, {"year": 2021, "dow": "вт", "label": "2021 вт", "fires": 55083.255370558276}, {"year": 2021, "dow": "ср", "label": "2021 ср", "fires": 52667.48576925759}, {"year": 2021, "dow": "чт", "label": "2021 чт", "fires": 52005.381379141036}, {"year": 2021, "dow": "пт", "label": "2021 пт", "fires": 52702.60991954548}, {"year": 2021, "dow": "сб", "label": "2021 сб", "fires": 56084.30206633376}, {"year": 2021, "dow": "вскр", "label": "2021 вскр", "fires": 61029.36971546367}], "4": [{"year": 2019, "dow": "пн", "label": "2019 пн", "fires": 65170.559089892515}, {"year": 2019, "dow": "вт", "label": "2019 вт", "fires": 65189.18009223408}, {"year": 2019, "dow": "ср", "label": "2019 ср", "fires": 65388.140736878275}, {"year": 2019, "dow": "чт", "label": "2019 чт", "fires": 64849.357997745836}, {"year": 2019, "dow": "пт", "label": "2019 пт", "fires": 65213.97071137341}, {"year": 2019, "dow": "сб", "label": "2019 сб", "fires": 70070.86761065079}, {"year": 2019, "dow": "вскр", "label": "2019 вскр", "fires": 73661.2626977788}, {"year": 2020, "dow": "пн", "label": "2020 пн", "fires": 61588.83743949438}, {"year": 2020, "dow": "вт", "label": "2020 вт", "fires": 59726.08475626576}, {"year": 2020, "dow": "ср", "label": "2020 ср", "fires": 59624.092622256496}, {"year": 2020, "dow": "чт", "label": "2020 чт", "fires": 61488.98038126539}, {"year": 2020, "dow": "пт", "label": "2020 пт", "fires": 60605.303214685155}, {"year": 2020, "dow": "сб", "label": "2020 сб", "fires": 64609.70306119838}, {"year": 2020, "dow": "вскр", "label": "2020 вскр", "fires": 69278.57416054433}, {"year": 2021, "dow": "пн", "label": "2021 пн", "fires": 63542.200932491505}, {"year": 2021, "dow": "вт", "label": "2021 вт", "fires": 54912.65767262752}, {"year": 2021, "dow": "ср", "label": "2021 ср", "fires": 53402.60487827506}, {"year": 2021, "dow": "чт", "label": "2021 чт", "fires": 52002.0708664733}, {"year": 2021, "dow": "пт", "label": "2021 пт", "fires": 52553.54116119354}, {"year": 2021, "dow": "сб", "label": "2021 сб", "fires": 56608.02466180038}, {"year": 2021, "dow": "вскр", "label": "2021 вскр", "fires": 61456.572831488105}], "5": [{"year": 2019, "dow": "пн", "label": "2019 пн", "fires": 65226.69719288437}, {"year": 2019, "dow": "вт", "label": "2019 вт", "fires": 65123.954880494544}, {"year": 2019, "dow": "ср", "label": "2019 ср", "fires": 65216.249462666055}, {"year": 2019, "dow": "чт", "label": "2019 чт", "fires": 65195.21084182334}, {"year": 2019, "dow": "пт", "label": "2019 пт", "fires": 64739.45064436435}, {"year": 2019, "dow": "сб", "label": "2019 сб", "fires": 68395.7244606851}, {"year": 2019, "dow": "вскр", "label": "2019 вскр", "fires": 73473.67426851382}, {"year": 2020, "dow": "пн", "label": "2020 пн", "fires": 73255.82111780654}, {"year": 2020, "dow": "вт", "label": "2020 вт", "fires": 60102.77543166711}, {"year": 2020, "dow": "ср", "label": "2020 ср", "fires": 58838.917336814004}, {"year": 2020, "dow": "чт", "label": "2020 чт", "fires": 61230.512901502334}, {"year": 2020, "dow": "пт", "label": "2020 пт", "fires": 60641.78279561885}, {"year": 2020, "dow": "сб", "label": "2020 сб", "fires": 61629.334741334846}, {"year": 2020, "dow": "вскр", "label": "2020 вскр", "fires": 69403.18414778652}, {"year": 2021, "dow": "пн", "label": "2021 пн", "fires": 66915.86709773788}, {"year": 2021, "dow": "вт", "label": "2021 вт", "fires": 54009.14940511413}, {"year": 2021, "dow": "ср", "label": "2021 ср", "fires": 53611.63701397325}, {"year": 2021, "dow": "чт", "label": "2021 чт", "fires": 52000.78642124412}, {"year": 2021, "dow": "пт", "label": "2021 пт", "fires": 54049.635943065296}, {"year": 2021, "dow": "сб", "label": "2021 сб", "fires": 56639.544609194934}, {"year": 2021, "dow": "вскр", "label": "2021 вскр", "fires": 60936.963290155065}], "6": [{"year": 2019, "dow": "пн", "label": "2019 пн", "fires": 65340.23364301907}, {"year": 2019, "dow": "вт", "label": "2019 вт", "fires": 65234.67035418434}, {"year": 2019, "dow": "ср", "label": "2019 ср", "fires": 65447.24315576864}, {"year": 2019, "dow": "чт", "label": "2019 чт", "fires": 64893.757688183934}, {"year": 2019, "dow": "пт", "label": "2019 пт", "fires": 65291.39866197994}, {"year": 2019, "dow": "сб", "label": "2019 сб", "fires": 68938.15714804902}, {"year": 2019, "dow": "вскр", "label": "2019 вскр", "fires": 73613.92006883734}, {"year": 2020, "dow": "пн", "label": "2020 пн", "fires": 64800.01387710582}, {"year": 2020, "dow": "вт", "label": "2020 вт", "fires": 60655.70097969509}, {"year": 2020, "dow": "ср", "label": "2020 ср", "fires": 60637.041358393086}, {"year": 2020, "dow": "чт", "label": "2020 чт", "fires": 60715.60347517531}, {"year": 2020, "dow": "пт", "label": "2020 пт", "fires": 60869.117967674225}, {"year": 2020, "dow": "сб", "label": "2020 сб", "fires": 62615.99216724132}, {"year": 2020, "dow": "вскр", "label": "2020 вскр", "fires": 68702.46507795654}, {"year": 2021, "dow": "пн", "label": "2021 пн", "fires": 68660.89965467106}, {"year": 2021, "dow": "вт", "label": "2021 вт", "fires": 54026.31200550343}, {"year": 2021, "dow": "ср", "label": "2021 ср", "fires": 53333.60125006546}, {"year": 2021, "dow": "чт", "label": "2021 чт", "fires": 52006.09723426884}, {"year": 2021, "dow": "пт", "label": "2021 пт", "fires": 53753.1486453159}, {"year": 2021, "dow": "сб", "label": "2021 сб", "fires": 60755.381113803625}, {"year": 2021, "dow": "вскр", "label": "2021 вскр", "fires": 61221.65699546451}], "7": [{"year": 2019, "dow": "пн", "label": "2019 пн", "fires": 65394.95349810615}, {"year": 2019, "dow": "вт", "label": "2019 вт", "fires": 65249.75416982263}, {"year": 2019, "dow": "ср", "label": "2019 ср", "fires": 65071.83395257245}, {"year": 2019, "dow": "чт", "label": "2019 чт", "fires": 65104.051772848776}, {"year": 2019, "dow": "пт", "label": "2019 пт", "fires": 65123.10881720325}, {"year": 2019, "dow": "сб", "label": "2019 сб", "fires": 71449.50714847584}, {"year": 2019, "dow": "вскр", "label": "2019 вскр", "fires": 73989.67551134177}, {"year": 2020, "dow": "пн", "label": "2020 пн", "fires": 73433.55189854185}, {"year": 2020, "dow": "вт", "label": "2020 вт", "fires": 60847.4550628854}, {"year": 2020, "dow": "ср", "label": "2020 ср", "fires": 60848.546726185195}, {"year": 2020, "dow": "чт", "label": "2020 чт", "fires": 60915.58729872037}, {"year": 2020, "dow": "пт", "label": "2020 пт", "fires": 60684.623698794756}, {"year": 2020, "dow": "сб", "label": "2020 сб", "fires": 63853.64583985772}, {"year": 2020, "dow": "вскр", "label": "2020 вскр", "fires": 68469.81779903188}, {"year": 2021, "dow": "пн", "label": "2021 пн", "fires": 56914.98627320071}, {"year": 2021, "dow": "вт", "label": "2021 вт", "fires": 54205.270721732406}, {"year": 2021, "dow": "ср", "label": "2021 ср", "fires": 52686.54551334105}, {"year": 2021, "dow": "чт", "label": "2021 чт", "fires": 52011.87164975064}, {"year": 2021, "dow": "пт", "label": "2021]()_
+/* =========================
+   ВАЖНО:
+   Вставьте сюда ваши ДАННЫЕ БЕЗ ИЗМЕНЕНИЙ:
+   1) const SECTION1_VARIANTS = {...};  (все варианты 1..30)
+   2) const VARIANT_CONFIGS = [...];     (30 конфигов)
+   ========================= */
+
+const SECTION1_VARIANTS = /* ВСТАВЬТЕ ВАШ ОБЪЕКТ SECTION1_VARIANTS */ {};
+const VARIANT_CONFIGS = /* ВСТАВЬТЕ ВАШ МАССИВ VARIANT_CONFIGS */ [];
+
+/* ============ УТИЛИТЫ ============ */
+function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296;}}
+function randInt(rng,n){return Math.floor(rng()*n);}
+
+function downloadText(filename, text){
+  const isCSV = /\.csv$/i.test(filename);
+  // BOM для Excel (кириллица/разделитель)
+  const payload = isCSV ? "\ufeff" + text : text;
+  const blob = new Blob([payload], {type: (isCSV ? "text/csv;charset=utf-8" : "text/plain;charset=utf-8")});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+function tableToCSV(table){
+  const rows=[...table.querySelectorAll("tr")].map(tr=>[...tr.querySelectorAll("th,td")].map(td=>{
+    let s=(td.innerText||"").replace(/\s+/g," ").trim();
+    if(s.includes(",")||s.includes(";")||s.includes("\"")) s="\"" + s.replace(/"/g,'""') + "\"";
+    return s;
+  }).join(";"));
+  return rows.join("\n");
+}
+
+function renderTable(container, headers, rows){
+  let html='<table><thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
+  for(const r of rows){ html+='<tr>'+r.map(c=>`<td>${c}</td>`).join('')+'</tr>'; }
+  html+='</tbody></table>';
+  container.innerHTML=html;
+  return container.querySelector('table');
+}
+
+function renderBarSVG(containerId, values, labels, title){
+  const W=820,H=260,pad=40;
+  const maxV=Math.max(...values,0.0001);
+  const n=values.length;
+  const bw=(W-2*pad)/n;
+  let svg=`<svg viewBox="0 0 ${W} ${H}">
+    <rect x="0" y="0" width="${W}" height="${H}" fill="rgba(255,255,255,0.02)" rx="12"></rect>
+    <text x="${pad}" y="22" fill="#cfe0ff" font-size="14" font-weight="600">${title}</text>
+    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="rgba(255,255,255,0.15)"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="rgba(255,255,255,0.15)"/>
+  `;
+  for(let i=0;i<n;i++){
+    const v=values[i];
+    const h=(H-2*pad)*(v/maxV);
+    const x=pad+i*bw+2;
+    const y=(H-pad)-h;
+    svg+=`<rect x="${x}" y="${y}" width="${bw-4}" height="${h}" fill="rgba(122,162,255,0.55)"></rect>`;
+    if(n<=20){
+      svg+=`<text x="${x+(bw-4)/2}" y="${H-pad+16}" fill="rgba(233,238,252,0.75)" font-size="11" text-anchor="middle">${labels[i]}</text>`;
+    }
+  }
+  svg+='</svg>';
+  document.getElementById(containerId).innerHTML=svg;
+}
+
+function autocorr(x, maxLag){
+  const n=x.length;
+  const mean=x.reduce((a,b)=>a+b,0)/n;
+  const dev=x.map(v=>v-mean);
+  const denom=dev.reduce((a,b)=>a+b*b,0);
+  const out=[];
+  for(let lag=0;lag<=maxLag;lag++){
+    let num=0;
+    for(let t=lag;t<n;t++) num+=dev[t]*dev[t-lag];
+    out.push(num/denom);
+  }
+  return out;
+}
+
+function genGridCounts(rng,totalCalls,hotspot=false){
+  const cells=100;
+  const counts=new Array(cells).fill(0);
+  if(!hotspot){
+    for(let i=0;i<totalCalls;i++) counts[randInt(rng,cells)]++;
+  }else{
+    const weights=new Array(cells).fill(1);
+    const hot=[22,23,32,33,44,45,54,55,77,78];
+    hot.forEach(i=>weights[i]=5);
+    const sumW=weights.reduce((a,b)=>a+b,0);
+    const cdf=[]; let acc=0;
+    for(let i=0;i<cells;i++){ acc+=weights[i]/sumW; cdf.push(acc); }
+    for(let i=0;i<totalCalls;i++){
+      const u=rng();
+      let idx=cdf.findIndex(v=>v>=u); if(idx<0) idx=cells-1;
+      counts[idx]++; 
+    }
+  }
+  return counts;
+}
+function freqFromCounts(counts){
+  const freq=new Map();
+  for(const c of counts) freq.set(c,(freq.get(c)||0)+1);
+  const ks=[...freq.keys()].sort((a,b)=>a-b);
+  return ks.map(k=>({k, cells:freq.get(k)}));
+}
+
+const FACT=[1];
+for(let i=1;i<=60;i++) FACT[i]=FACT[i-1]*i;
+
+function poissonPMF(k,lambda){
+  if(k<0) return 0;
+  if(k<=60) return Math.exp(-lambda)*Math.pow(lambda,k)/FACT[k];
+  const kk=k;
+  const logfact = kk*Math.log(kk) - kk + 0.5*Math.log(2*Math.PI*kk);
+  const logp = -lambda + k*Math.log(lambda) - logfact;
+  return Math.exp(logp);
+}
+
+function groupForChiSquare(ksObs, obsCounts, expCounts, minE=5){
+  let groups=ksObs.map((k,i)=>({label:String(k), O:obsCounts[i], E:expCounts[i]}));
+  function hasSmall(){ return groups.some(g=>g.E<minE); }
+  while(hasSmall() && groups.length>2){
+    let idx=-1;
+    for(let i=groups.length-1;i>=0;i--){ if(groups[i].E<minE){ idx=i; break; } }
+    if(idx<=0){
+      groups[0]={label:`${groups[0].label}–${groups[1].label}`, O:groups[0].O+groups[1].O, E:groups[0].E+groups[1].E};
+      groups.splice(1,1);
+    }else{
+      groups[idx-1]={label:`${groups[idx-1].label}–${groups[idx].label}`, O:groups[idx-1].O+groups[idx].O, E:groups[idx-1].E+groups[idx].E};
+      groups.splice(idx,1);
+    }
+  }
+  return groups;
+}
+
+function erlangCDF(t,k,lambda){
+  if(!isFinite(t)) return 1.0;
+  if(t<=0) return 0.0;
+  const lt=lambda*t;
+  let s=0;
+  for(let j=0;j<=k-1;j++) s += Math.pow(lt,j)/FACT[j];
+  return 1 - Math.exp(-lt)*s;
+}
+function sampleExponential(rng, lambda){
+  let u=rng(); if(u<=0) u=1e-12;
+  return -Math.log(u)/lambda;
+}
+function sampleErlang(rng,k,lambda){
+  let s=0; for(let i=0;i<k;i++) s += sampleExponential(rng,lambda);
+  return s;
+}
+function sampleErlangTruncated(rng,k,lambda,tmax){
+  for(let tries=0;tries<10000;tries++){
+    const x=sampleErlang(rng,k,lambda);
+    if(x<=tmax) return x;
+  }
+  return tmax;
+}
+function makeIntervals(bounds){
+  const intervals=[]; for(let i=0;i<bounds.length-1;i++) intervals.push({a:bounds[i], b:bounds[i+1]});
+  return intervals;
+}
+function countInIntervals(values, intervals){
+  const O=new Array(intervals.length).fill(0);
+  for(const v of values){
+    for(let i=0;i<intervals.length;i++){
+      const it=intervals[i];
+      const last=(i===intervals.length-1);
+      if(last){ if(v>=it.a && v<=it.b){ O[i]++; break; } }
+      else { if(v>=it.a && v<it.b){ O[i]++; break; } }
+    }
+  }
+  return O;
+}
+function expectedForErlang(intervals, N, k, lambda, tmax=null){
+  let norm=1.0;
+  if(tmax!==null) norm = erlangCDF(tmax,k,lambda);
+  const E=[];
+  for(const it of intervals){
+    const p=(erlangCDF(it.b,k,lambda) - erlangCDF(it.a,k,lambda))/norm;
+    E.push(N*p);
+  }
+  return E;
+}
+function chiSquare(O,E){
+  let chi=0;
+  for(let i=0;i<O.length;i++) chi += (O[i]-E[i])*(O[i]-E[i])/(E[i]||1e-9);
+  return chi;
+}
+
+const CHI2_CRIT_005 = {"1": 3.841, "2": 5.991, "3": 7.815, "4": 9.488, "5": 11.07, "6": 12.592, "7": 14.067, "8": 15.507, "9": 16.919, "10": 18.307, "11": 19.675, "12": 21.026, "13": 22.362, "14": 23.685, "15": 24.996, "16": 26.296, "17": 27.587, "18": 28.869, "19": 30.144, "20": 31.41, "21": 32.671, "22": 33.924, "23": 35.172, "24": 36.415, "25": 37.652, "26": 38.885, "27": 40.113, "28": 41.337, "29": 42.557, "30": 43.773};
+function chi2crit(df){ return CHI2_CRIT_005[df] || null; }
+
+/* ============ UI И ЛОГИКА ============ */
+const sel=document.getElementById('variantTop');
+const grid=document.getElementById('variantGrid');
+
+for(let i=1;i<=30;i++){
+  const opt=document.createElement('option');
+  opt.value=String(i); opt.textContent=String(i);
+  sel.appendChild(opt);
+
+  const b=document.createElement('button');
+  b.className='variant-btn';
+  b.type='button';
+  b.textContent=String(i);
+  b.addEventListener('click', ()=>setVariant(i));
+  grid.appendChild(b);
+}
+
+function markActive(v){
+  [...grid.querySelectorAll('.variant-btn')].forEach((btn,idx)=>{
+    btn.classList.toggle('active', (idx+1)===v);
+  });
+}
+
+let csv1="", csv2grid="", csv2freq="", csv3="";
+
+function buildSection1(v){
+  const series=SECTION1_VARIANTS[String(v)];
+  const rows=series.map((d,i)=>[i+1, d.label, Math.round(d.fires)]);
+  const t=renderTable(document.getElementById('s1out'), ['№','Период','Количество пожаров'], rows);
+  csv1 = tableToCSV(t);
+
+  const x=series.map(d=>d.fires);
+  const acf=autocorr(x,10);
+  renderTable(document.getElementById('s1acfTable'), ['Лаг','r(лаг)'], acf.map((r,lag)=>[lag, r.toFixed(4)]));
+  renderBarSVG('s1acfPlot', acf.slice(1), acf.slice(1).map((_,i)=>String(i+1)), 'Коррелограмма (лаги 1–10)');
+}
+
+function buildSection2(cfg){
+  const rng=mulberry32(cfg.seed2);
+  const counts=genGridCounts(rng, cfg.totalCalls, cfg.hotspot===1);
+
+  const gridRows=[];
+  for(let r=0;r<10;r++){
+    const row=[];
+    for(let c=0;c<10;c++) row.push(counts[r*10+c]);
+    gridRows.push(row);
+  }
+  const gridTable=renderTable(document.getElementById('s2grid'), [...Array(10)].map((_,i)=>'C'+(i+1)), gridRows);
+  csv2grid = tableToCSV(gridTable);
+
+  const freq=freqFromCounts(counts);
+  const freqTable=renderTable(document.getElementById('s2freq'), ['k','Число участков'], freq.map(o=>[o.k,o.cells]));
+  csv2freq = tableToCSV(freqTable);
+
+  const lambda = cfg.totalCalls/100;
+  document.getElementById('s2kpi').innerHTML = `
+    <div class="pill"><small>Всего выездов</small><b>${cfg.totalCalls}</b></div>
+    <div class="pill"><small>Участков</small><b>100</b></div>
+    <div class="pill"><small>λ = N/100</small><b>${lambda.toFixed(3)}</b></div>
+    <div class="pill"><small>Сценарий</small><b>${cfg.hotspot===1?'горячие зоны':'равномерно'}</b></div>
+  `;
+
+  const kmax=Math.max(...counts);
+  const ks=[], O=[], E=[];
+  for(let k=0;k<=kmax;k++){
+    const obs=freq.find(o=>o.k===k);
+    ks.push(k);
+    O.push(obs?obs.cells:0);
+    E.push(100*poissonPMF(k,lambda));
+  }
+  let psum=0; for(let k=0;k<=kmax;k++) psum+=poissonPMF(k,lambda);
+  const pTail=1-psum;
+  if(pTail>1e-10) E[E.length-1]+=100*pTail;
+
+  const groups=groupForChiSquare(ks,O,E,5);
+  let chi=0;
+  const rows=groups.map(g=>{
+    const contrib=(g.O-g.E)*(g.O-g.E)/(g.E||1e-9);
+    chi+=contrib;
+    return [g.label, g.O, g.E.toFixed(2), contrib.toFixed(3)];
+  });
+  const df=groups.length-1-1; // m=1
+  const crit=chi2crit(df);
+  const decision=(crit!==null && chi<=crit) ? 'не отвергается' : 'отвергается';
+  rows.push(['ИТОГО','','',chi.toFixed(3)]);
+  renderTable(document.getElementById('s2chi'), ['Группа k','O','E','(O−E)²/E'], rows);
+  document.getElementById('s2chi').insertAdjacentHTML('beforeend', `
+    <div class="kpi" style="margin-top:8px;">
+      <div class="pill"><small>ν</small><b>${df}</b></div>
+      <div class="pill"><small>χ²</small><b>${chi.toFixed(3)}</b></div>
+      <div class="pill"><small>χ²кр</small><b>${crit!==null?crit.toFixed(3):'—'}</b></div>
+      <div class="pill"><small>Решение</small><b>${decision}</b></div>
+    </div>
+  `);
+}
+
+function buildSection3(cfg){
+  const N=100;
+  const rng=mulberry32(cfg.seed3);
+
+  const k0=1,k1=2,k2=3,k3=4;
+  const lam0=k0/cfg.meanT0, lam1=k1/cfg.meanT1, lam2=k2/cfg.meanT2, lam3=k3/cfg.meanT3;
+
+  const Tmax1=1.0, Tmax2=1.0, Tmax3=10.0;
+
+  const T0=[...Array(N)].map(()=>sampleErlang(rng,k0,lam0));
+  const T1=[...Array(N)].map(()=>sampleErlangTruncated(rng,k1,lam1,Tmax1));
+  const T2=[...Array(N)].map(()=>sampleErlangTruncated(rng,k2,lam2,Tmax2));
+  const T3=[...Array(N)].map(()=>sampleErlangTruncated(rng,k3,lam3,Tmax3));
+
+  const I0=makeIntervals([0,15,30,45,60,90,Infinity]);
+  const I1=makeIntervals([0,0.15,0.25,0.35,0.45,0.55,1.0]);
+  const I2=makeIntervals([0,0.205,0.305,0.414,0.571,0.710,1.0]);
+  const I3=makeIntervals([0,3.0,4.0,5.5,7.0,8.5,10.0]);
+
+  const tables=[
+    {key:'T0', name:'T₀ — обслуживание вызова, мин', values:T0, intervals:I0, tmax:null},
+    {key:'T1', name:'T₁ — диспетчеризация, мин (≤1)', values:T1, intervals:I1, tmax:Tmax1},
+    {key:'T2', name:'T₂ — сбор и выезд, мин (≤1)', values:T2, intervals:I2, tmax:Tmax2},
+    {key:'T3', name:'T₃ — следование, мин (≤10)', values:T3, intervals:I3, tmax:Tmax3},
+  ];
+
+  const out=document.getElementById('s3out');
+  out.innerHTML='';
+  const csvLines=['Показатель;Интервал;O_i'];
+  const fmtInt=(a,b,last)=>!isFinite(b)?`[${a};∞)`:`[${a};${b}${last?']':')'}`;
+
+  for(const t of tables){
+    const O=countInIntervals(t.values, t.intervals);
+    const rows=t.intervals.map((it,idx)=>[fmtInt(it.a,it.b,idx===t.intervals.length-1), O[idx]]);
+    const box=document.createElement('div');
+    box.className='card';
+    box.style.background='rgba(0,0,0,.12)';
+    box.style.borderColor='rgba(255,255,255,.08)';
+    box.innerHTML=`<h4 style="margin:0 0 6px 0;">${t.name}: интервалы и эмпирические частоты Oᵢ</h4><div id="tbl_${t.key}"></div>`;
+    out.appendChild(box);
+    renderTable(box.querySelector(`#tbl_${t.key}`), ['Интервал','Oᵢ'], rows);
+    rows.forEach(r=>csvLines.push(`${t.name};${r[0]};${r[1]}`));
+  }
+  csv3 = csvLines.join("\n");
+
+  document.getElementById('s3kpi').innerHTML = `
+    <div class="pill"><small>N</small><b>100</b></div>
+    <div class="pill"><small>Среднее T₀</small><b>${cfg.meanT0}</b></div>
+    <div class="pill"><small>Среднее T₁</small><b>${cfg.meanT1}</b></div>
+    <div class="pill"><small>Среднее T₂</small><b>${cfg.meanT2}</b></div>
+    <div class="pill"><small>Среднее T₃</small><b>${cfg.meanT3}</b></div>
+  `;
+
+  const summaryRows=[];
+  const chiDiv=document.getElementById('s3chiTables');
+  chiDiv.innerHTML='';
+  for(const t of tables){
+    const mean=t.values.reduce((a,b)=>a+b,0)/t.values.length;
+    const O=countInIntervals(t.values, t.intervals);
+    const df=t.intervals.length-1-1;
+    const crit=chi2crit(df);
+    let best=null;
+    const perK=[];
+    for(let k=1;k<=4;k++){
+      const lambda=k/mean;
+      const E=expectedForErlang(t.intervals, 100, k, lambda, t.tmax);
+      const chi=chiSquare(O,E);
+      const ok=(crit!==null && chi<=crit);
+      perK.push({k,lambda,chi,ok});
+      if(ok && (!best || chi<best.chi)) best={k,lambda,chi};
+    }
+    summaryRows.push([t.name, mean.toFixed(4), best?best.k:'—', best?best.lambda.toFixed(6):'—', best?best.chi.toFixed(3):'—', df, crit!==null?crit.toFixed(3):'—', best?'не отвергается':'нет k']);
+
+    const wrap=document.createElement('div');
+    wrap.className='card';
+    wrap.style.background='rgba(0,0,0,.12)';
+    wrap.style.borderColor='rgba(255,255,255,.08)';
+    wrap.innerHTML=`<h4 style="margin:0 0 6px 0;">${t.name}: χ² по кандидатам k=1..4</h4><div id="chi_${t.key}"></div>`;
+    chiDiv.appendChild(wrap);
+    renderTable(wrap.querySelector(`#chi_${t.key}`), ['k','λ̂','χ²','Решение'],
+      perK.map(r=>[r.k, r.lambda.toFixed(6), r.chi.toFixed(3), r.ok?'OK':'отверг.']));
+  }
+  renderTable(document.getElementById('s3summary'),
+    ['Показатель','T̄','k*','λ̂*','χ²(k*)','ν','χ²кр','Вывод'],
+    summaryRows
+  );
+}
+
+function buildKit(){
+  const v=parseInt(sel.value,10);
+
+  // UI
+  document.getElementById('curVar').textContent=String(v);
+  const pv=document.getElementById('printVar');
+  if(pv) pv.textContent=String(v);
+  markActive(v);
+
+  // config
+  const cfg=VARIANT_CONFIGS.find(x=>Number(x.variant)==v);
+  if(!cfg){
+    alert('Не найден конфиг для варианта '+v);
+    return;
+  }
+  if(!SECTION1_VARIANTS[String(v)]){
+    alert('Не найдены данные SECTION1_VARIANTS для варианта '+v);
+    return;
+  }
+
+  buildSection1(v);
+  buildSection2(cfg);
+  buildSection3(cfg);
+}
+
+function setVariant(v){
+  sel.value=String(v);
+  buildKit();
+}
+
+document.getElementById('btnKit').addEventListener('click', buildKit);
+sel.addEventListener('change', buildKit);
+sel.addEventListener('input', buildKit);
+
+document.getElementById('btnCSV').addEventListener('click', ()=>{
+  if(!csv1) buildKit();
+  downloadText(`Вариант_${sel.value}_Раздел1_Ряд.csv`, csv1);
+  downloadText(`Вариант_${sel.value}_Раздел2_Матрица_10x10.csv`, csv2grid);
+  downloadText(`Вариант_${sel.value}_Раздел2_Частоты.csv`, csv2freq);
+  downloadText(`Вариант_${sel.value}_Раздел3_Oi.csv`, csv3);
+});
+
+// Печать / PDF (офлайн): окно печати → "Сохранить как PDF"
+document.getElementById('btnPrint').addEventListener('click', ()=>{
+  if(!csv1) buildKit(); // гарантируем, что расчёты построены
+  const d=new Date();
+  const pd=document.getElementById('printDate');
+  if(pd) pd.textContent = d.toLocaleString('ru-RU');
+  window.print();
+});
+
+// старт
+setVariant(1);
+</script>
+</body>
+</html>
