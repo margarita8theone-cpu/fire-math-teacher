@@ -253,26 +253,50 @@ function autocorr(x, maxLag){
 }
 
 /* Разворачиваем профиль недели -> ежедневный ряд */
-function expandWeeklyProfileToDaily(seriesByYearDow, weeksPerYear=52, noiseRel=0.015, seed=12345){
+function generateDailySeriesFromWeeklyProfile(seriesByYearDow, weeksPerYear=52, seed=12345){
+
   const rng = mulberry32(seed);
+
   const byYear = new Map();
+
   for(const d of seriesByYearDow){
     const y = Number(d.year);
     if(!byYear.has(y)) byYear.set(y, []);
     byYear.get(y).push(Number(d.fires));
   }
-  const years = [...byYear.keys()].sort((a,b)=>a-b);
-  const out = [];
+
+  const years=[...byYear.keys()].sort((a,b)=>a-b);
+
+  const out=[];
+
   for(const y of years){
-    const week = byYear.get(y); // ожидаем пн..вс
+
+    const week = byYear.get(y);
+
     for(let w=0; w<weeksPerYear; w++){
-      for(let i=0;i<week.length;i++){
-        const base = week[i];
-        const eps = (rng()*2 - 1) * noiseRel;
-        out.push(base * (1 + eps));
+
+      for(let i=0;i<7;i++){
+
+        const lambda = week[i];
+
+        const L = Math.exp(-lambda);
+
+        let k=0;
+        let p=1;
+
+        do{
+          k++;
+          p*=rng();
+        }while(p>L);
+
+        out.push(k-1);
+
       }
+
     }
+
   }
+
   return out;
 }
 
@@ -427,7 +451,7 @@ function buildSection1(v){
   csv1 = tableToCSV(t);
 
   // КЛЮЧЕВО: считаем ACF по ежедневному ряду (недельная сезонность), а не по 21 точке
-  const xDaily = expandWeeklyProfileToDaily(series, 52, 0.015, 900000 + v);
+  const xDaily = generateDailySeriesFromWeeklyProfile(series, 52, 900000 + v);
   const n = xDaily.length;
 
   const maxLag=21;                 // видно 7, 14, 21
