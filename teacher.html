@@ -444,37 +444,78 @@ let csv1="", csv2grid="", csv2freq="", csv3="";
 /* =======================
    Раздел 1 (ИСПРАВЛЕНО)
    ======================= */
+<script>
 function buildSection1(v){
   const series=SECTION1_VARIANTS[String(v)];
+
+  // 1) Таблица исходных данных (как было)
   const rows=series.map((d,i)=>[i+1, d.label, Math.round(d.fires)]);
-  const t=renderTable(document.getElementById('s1out'), ['№','Период','Количество пожаров'], rows);
+  const t=renderTable(document.getElementById('s1out'),
+    ['№','Период','Количество пожаров'], rows);
   csv1 = tableToCSV(t);
 
-  // КЛЮЧЕВО: считаем ACF по ежедневному ряду (недельная сезонность), а не по 21 точке
+  // 2) Генерируем ДНЕВНОЙ ряд с недельной сезонностью
+  //    (важно: по нему и считаем ACF)
   const xDaily = generateDailySeriesFromWeeklyProfile(series, 52, 900000 + v);
-  const n = xDaily.length;
 
-  const maxLag=21;                 // видно 7, 14, 21
-  const acf=autocorr(xDaily,maxLag);
+  // 3) ACF (имеет смысл показывать хотя бы до 28, чтобы видеть 7/14/21/28)
+  const maxLag = 28;
+  const acf = autocorr(xDaily, maxLag);
 
-  const conf = 1.96/Math.sqrt(n);  // границы значимости (≈0.05)
+  renderTable(
+    document.getElementById('s1acfTable'),
+    ['Лаг','r(лаг)'],
+    acf.map((r,lag)=>[lag, r.toFixed(4)])
+  );
+  console.log('xDaily length=', xDaily.length, 'first14=', xDaily.slice(0,14));
+<script>
+function renderBarSVGZeroCentered(containerId, values, labels, title){
+  const W=820,H=260,pad=40;
+  const maxAbs=Math.max(...values.map(v=>Math.abs(v)), 0.0001);
+  const n=values.length;
+  const bw=(W-2*pad)/n;
 
-  const acfRows=[];
-  for(let lag=0;lag<=maxLag;lag++){
-    const r=acf[lag];
-    const sig = (lag===0) ? '—' : (Math.abs(r)>conf ? 'значимо' : 'не значимо');
-    let note='';
-    if(lag===7) note='неделя';
-    if(lag===14) note='2 недели';
-    if(lag===21) note='3 недели';
-    acfRows.push([lag, r.toFixed(4), sig, note]);
+  const midY = pad + (H-2*pad)/2; // нулевая линия по центру
+  const scale = (H-2*pad)/2 / maxAbs;
+
+  let svg=`<svg viewBox="0 0 ${W} ${H}">
+    <rect x="0" y="0" width="${W}" height="${H}" fill="rgba(255,255,255,0.02)" rx="12"></rect>
+    <text x="${pad}" y="22" fill="#cfe0ff" font-size="14" font-weight="600">${title}</text>
+    <line x1="${pad}" y1="${midY}" x2="${W-pad}" y2="${midY}" stroke="rgba(255,255,255,0.20)"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="rgba(255,255,255,0.15)"/>
+  `;
+
+  for(let i=0;i<n;i++){
+    const v=values[i];
+    const h = v * scale;
+    const x=pad+i*bw+2;
+
+    const y = (h>=0) ? (midY - h) : midY;
+    const hh = Math.abs(h);
+
+    svg+=`<rect x="${x}" y="${y}" width="${bw-4}" height="${hh}"
+              fill="rgba(122,162,255,0.55)"></rect>`;
+
+    if(n<=28){
+      svg+=`<text x="${x+(bw-4)/2}" y="${H-pad+16}"
+                  fill="rgba(233,238,252,0.75)" font-size="11"
+                  text-anchor="middle">${labels[i]}</text>`;
+    }
   }
-  renderTable(document.getElementById('s1acfTable'), ['Лаг','r(лаг)','Значимость (≈0.05)','Примечание'], acfRows);
 
-  const vals=acf.slice(1);
-  const labels=vals.map((_,i)=>String(i+1));
-  renderACFSVG('s1acfPlot', vals, labels, 'Коррелограмма ACF (лаги 1–21)', conf);
+  svg+='</svg>';
+  document.getElementById(containerId).innerHTML=svg;
 }
+</script>
+  // Лаг 0 не рисуем
+  renderBarSVGZeroCentered(
+    's1acfPlot',
+    acf.slice(1),
+    acf.slice(1).map((_,i)=>String(i+1)),
+    'Коррелограмма (лаги 1–28, дневной ряд)'
+  );
+}
+</script>
 
 /* =======================
    Раздел 2 (как было)
