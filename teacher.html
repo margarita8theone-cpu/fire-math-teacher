@@ -1,0 +1,724 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Генератор комплектов — преподаватель</title>
+<style>
+
+:root{--bg:#0b1020;--card:#111a33;--ink:#e9eefc;--muted:#a7b3d6;--accent:#7aa2ff;}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:linear-gradient(180deg,#070b17,#0b1020);color:var(--ink)}
+header{padding:18px 16px;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;background:rgba(11,16,32,.92);backdrop-filter: blur(8px);z-index:10}
+h1{margin:0;font-size:18px}
+small{color:var(--muted)}
+.container{max-width:1180px;margin:0 auto;padding:16px;display:grid;gap:14px}
+.card{background:rgba(17,26,51,.75);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+label{font-size:12px;color:var(--muted);display:block;margin-bottom:4px}
+input,select,button{border-radius:10px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);color:var(--ink);padding:10px 10px;font-size:14px}
+button{cursor:pointer;background:linear-gradient(180deg,rgba(122,162,255,.25),rgba(122,162,255,.12));border-color:rgba(122,162,255,.35)}
+button.secondary{background:rgba(255,255,255,.06)}
+.badge{display:inline-block;padding:3px 8px;border-radius:999px;border:1px solid rgba(255,255,255,.14);color:var(--muted);font-size:12px}
+.note{color:var(--muted);font-size:13px;line-height:1.45}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:980px){.grid2{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{border-bottom:1px solid rgba(255,255,255,.08);padding:8px 8px;text-align:left;vertical-align:top}
+th{color:#cfe0ff;font-weight:600}
+hr{border:none;border-top:1px solid rgba(255,255,255,.10);margin:12px 0}
+.kpi{display:flex;gap:10px;flex-wrap:wrap}
+.kpi .pill{padding:8px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.10);background:rgba(0,0,0,.18)}
+.kpi b{display:block;font-size:16px}
+svg{max-width:100%}
+.variant-grid{display:grid;grid-template-columns:repeat(10, minmax(0,1fr));gap:6px;margin-top:10px}
+@media(max-width:900px){.variant-grid{grid-template-columns:repeat(6,minmax(0,1fr));}}
+.variant-btn{padding:8px 0;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:var(--ink);cursor:pointer}
+.variant-btn.active{border-color:rgba(122,162,255,.7);background:rgba(122,162,255,.18)}
+@media print{
+  header{position:static; backdrop-filter:none; background:#fff !important; color:#000 !important; border-bottom:1px solid #ddd}
+  body{background:#fff !important; color:#000 !important}
+  .card{background:#fff !important; color:#000 !important; box-shadow:none !important; border:1px solid #ddd !important}
+  .note, small, label, .badge{color:#333 !important}
+  button, select, input, .variant-grid{display:none !important}
+}
+
+</style>
+</head>
+<body>
+<header>
+  <div class="container" style="padding:0 16px;">
+    <div class="row" style="justify-content:space-between;align-items:center;">
+      <div>
+        <h1>Генератор комплектов — преподаватель</h1>
+        <small>Варианты 1–30. Преподавательская версия с решениями и интерпретацией. (HTML офлайн)</small>
+      </div>
+      <div><span class="badge">Режим преподавателя</span></div>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+  <div class="card">
+    <div class="row" style="justify-content:space-between;align-items:flex-end;">
+      <div class="note" style="max-width:740px;">
+        Выберите <b>номер варианта (1–30)</b>. После выбора формируется <b>единый комплект исходных данных</b> для трёх задач:
+        (1) профиль пожаров по дням недели и ACF по развернутому недельному ряду; (2) проверка распределения вызовов; (3) подбор порядка Эрланга.
+      </div>
+      <div class="row">
+        <div>
+          <label>Номер варианта</label>
+          <select id="variantTop"></select>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="btnKit">Применить вариант</button>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button class="secondary" id="btnCSV">Скачать все CSV</button>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button class="secondary" id="btnPrint">Печать</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="variant-grid" id="variantGrid"></div>
+
+    <div class="kpi" style="margin-top:10px;">
+      <div class="pill"><small>Текущий вариант</small><b id="curVar">1</b></div>
+      <div class="pill"><small>Подсказка</small><b>нажмите номер или выберите в списке</b></div>
+    </div>
+  </div>
+
+  <div class="card" id="sec1">
+    <h3 style="margin:0 0 8px 0;">Раздел 1. Пожары по дням недели за 3 года</h3>
+    <div id="s1out"></div>
+    <div id="s1teacher" style="margin-top:12px;">
+      <div class="grid2">
+        <div>
+          <h4 style="margin:0 0 6px 0;">Профиль по дням недели</h4>
+          <div id="s1profile"></div>
+          <div style="margin-top:10px;">
+            <h4 style="margin:0 0 6px 0;">ACF по развернутому недельному ряду</h4>
+            <div id="s1acfTable"></div>
+          </div>
+        </div>
+        <div>
+          <h4 style="margin:0 0 6px 0;">Средние по дням недели</h4>
+          <div id="s1profilePlot"></div>
+          <div style="margin-top:10px;">
+            <h4 style="margin:0 0 6px 0;">Коррелограмма ACF</h4>
+            <div id="s1acfPlot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="sec2">
+    <h3 style="margin:0 0 8px 0;">Раздел 2. Вызовы по территории (100 участков, сетка 10×10)</h3>
+    <div class="kpi" id="s2kpi"></div>
+    <hr/>
+    <div class="grid2">
+      <div>
+        <h4 style="margin:0 0 6px 0;">Матрица 10×10 (число вызовов на участке)</h4>
+        <div id="s2grid"></div>
+      </div>
+      <div>
+        <h4 style="margin:0 0 6px 0;">Эмпирические частоты (число участков с k вызовами)</h4>
+        <div id="s2freq"></div>
+        <div id="s2teacher" style="margin-top:12px;">
+          <h4 style="margin:0 0 6px 0;">Проверка χ² Пирсона (преподаватель)</h4>
+          <div id="s2chi"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="sec3">
+    <h3 style="margin:0 0 8px 0;">Раздел 3. Времена реагирования (4 распределения по интервалам, N=100)</h3>
+    <div class="kpi" id="s3kpi"></div>
+    <hr/>
+    <div id="s3out"></div>
+    <div id="s3teacher" style="margin-top:12px;">
+      <h4 style="margin:0 0 6px 0;">Подбор порядка Эрланга по χ² (преподаватель)</h4>
+      <div id="s3summary"></div>
+      <div style="margin-top:10px;">
+        <h4 style="margin:0 0 6px 0;">χ² по кандидатам k=1..4</h4>
+        <div id="s3chiTables"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+
+const BASE_SECTION1_SERIES = [{"year": 2019, "dow": "пн", "label": "2019 пн", "fires": 65112.0}, {"year": 2019, "dow": "вт", "label": "2019 вт", "fires": 65031.0}, {"year": 2019, "dow": "ср", "label": "2019 ср", "fires": 64572.0}, {"year": 2019, "dow": "чт", "label": "2019 чт", "fires": 64644.0}, {"year": 2019, "dow": "пт", "label": "2019 пт", "fires": 65180.0}, {"year": 2019, "dow": "сб", "label": "2019 сб", "fires": 73216.0}, {"year": 2019, "dow": "вскр", "label": "2019 вскр", "fires": 73671.0}, {"year": 2020, "dow": "пн", "label": "2020 пн", "fires": 61291.0}, {"year": 2020, "dow": "вт", "label": "2020 вт", "fires": 58590.0}, {"year": 2020, "dow": "ср", "label": "2020 ср", "fires": 60495.0}, {"year": 2020, "dow": "чт", "label": "2020 чт", "fires": 61158.0}, {"year": 2020, "dow": "пт", "label": "2020 пт", "fires": 60283.0}, {"year": 2020, "dow": "сб", "label": "2020 сб", "fires": 68270.0}, {"year": 2020, "dow": "вскр", "label": "2020 вскр", "fires": 69219.0}, {"year": 2021, "dow": "пн", "label": "2021 пн", "fires": 56024.0}, {"year": 2021, "dow": "вт", "label": "2021 вт", "fires": 53725.0}, {"year": 2021, "dow": "ср", "label": "2021 ср", "fires": 52014.0}, {"year": 2021, "dow": "чт", "label": "2021 чт", "fires": 51877.0}, {"year": 2021, "dow": "пт", "label": "2021 пт", "fires": 55242.0}, {"year": 2021, "dow": "сб", "label": "2021 сб", "fires": 60697.0}, {"year": 2021, "dow": "вскр", "label": "2021 вскр", "fires": 61185.0}];
+const DOW_ORDER = ['пн','вт','ср','чт','пт','сб','вскр'];
+const DOW_LABELS = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+
+function mulberry32(a){return function(){let t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return ((t^t>>>14)>>>0)/4294967296;}}
+function randInt(rng,n){return Math.floor(rng()*n);}
+function mean(arr){ return arr.reduce((a,b)=>a+b,0)/(arr.length||1); }
+
+function generateSection1Series(variant){
+  const rng = mulberry32(700000 + variant*7919);
+  const weekendBoost = ((variant-1)%5 - 2) * 0.004;    // -0.8% .. +0.8%
+  const weekdayShift = ((variant-1)%7 - 3) * 0.0015;   // мягкий дрейф
+  const out = [];
+  for(const row of BASE_SECTION1_SERIES){
+    const weekend = (row.dow==='сб' || row.dow==='вскр');
+    const dowAdj = weekend ? weekendBoost : weekdayShift;
+    const yearAdj = row.year===2019 ? 0.002 : (row.year===2020 ? -0.001 : 0.001);
+    const noise = (rng()*2 - 1) * (weekend ? 0.006 : 0.004); // weekend чуть вариативнее
+    const fires = row.fires * (1 + dowAdj + yearAdj + noise);
+    out.push({...row, fires});
+  }
+  return out;
+}
+
+const SECTION1_VARIANTS = Object.fromEntries(
+  Array.from({length:30}, (_,i)=>[String(i+1), generateSection1Series(i+1)])
+);
+
+function generateVariantConfigs(){
+  const meanT0Cycle=[44.2,41.8,46.0,43.6,41.2,45.4,43.0,40.6,44.8,42.4,40.0];
+  const meanT1Cycle=[0.34,0.43,0.52,0.31,0.40,0.49,0.28,0.37,0.46,0.25];
+  const out=[];
+  for(let v=1; v<=30; v++){
+    out.push({
+      variant: v,
+      totalCalls: 300 + 5*(v-1),
+      hotspot: (v % 3 === 0) ? 1 : 0,
+      meanT0: meanT0Cycle[(v-1)%meanT0Cycle.length],
+      meanT1: meanT1Cycle[(v-1)%meanT1Cycle.length],
+      meanT2: (v % 2 === 1) ? 0.5 : 0.3,
+      meanT3: [6.5,7.5,5.5][(v-1)%3],
+      seed2: 107919 + 7919*(v-1),
+      seed3: 304729 + 104729*(v-1),
+    });
+  }
+  return out;
+}
+const VARIANT_CONFIGS = generateVariantConfigs();
+
+function downloadText(filename, text){
+  const blob=new Blob([text],{type:"text/plain;charset=utf-8"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download=filename; a.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+function tableToCSV(table){
+  const rows=[...table.querySelectorAll("tr")].map(tr=>[...tr.querySelectorAll("th,td")].map(td=>{
+    let s=(td.innerText||"").replace(/\s+/g," ").trim();
+    if(s.includes(",")||s.includes(";")||s.includes("\"")) s="\"" + s.replace(/"/g,'""') + "\"";
+    return s;
+  }).join(";"));
+  return rows.join("\n");
+}
+function renderTable(container, headers, rows){
+  let html='<table><thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
+  for(const r of rows){ html+='<tr>'+r.map(c=>`<td>${c}</td>`).join('')+'</tr>'; }
+  html+='</tbody></table>';
+  container.innerHTML=html;
+  return container.querySelector('table');
+}
+function renderBarSVG(containerId, values, labels, title){
+  const W=820,H=260,pad=40;
+  const maxV=Math.max(...values,0.0001);
+  const n=values.length;
+  const bw=(W-2*pad)/n;
+  let svg=`<svg viewBox="0 0 ${W} ${H}">
+    <rect x="0" y="0" width="${W}" height="${H}" fill="rgba(255,255,255,0.02)" rx="12"></rect>
+    <text x="${pad}" y="22" fill="#cfe0ff" font-size="14" font-weight="600">${title}</text>
+    <line x1="${pad}" y1="${H-pad}" x2="${W-pad}" y2="${H-pad}" stroke="rgba(255,255,255,0.15)"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="rgba(255,255,255,0.15)"/>
+  `;
+  for(let i=0;i<n;i++){
+    const v=values[i];
+    const h=(H-2*pad)*(v/maxV);
+    const x=pad+i*bw+2;
+    const y=(H-pad)-h;
+    svg+=`<rect x="${x}" y="${y}" width="${bw-4}" height="${h}" fill="rgba(122,162,255,0.55)"></rect>`;
+    if(n<=20){
+      svg+=`<text x="${x+(bw-4)/2}" y="${H-pad+16}" fill="rgba(233,238,252,0.75)" font-size="11" text-anchor="middle">${labels[i]}</text>`;
+    }
+  }
+  svg+='</svg>';
+  document.getElementById(containerId).innerHTML=svg;
+}
+
+function renderACFPlotWithBands(containerId, values, labels, title, crit){
+  const W=820,H=260,pad=40;
+  const maxAbs=Math.max(...values.map(v=>Math.abs(v)), Math.abs(crit), 0.0001);
+  const n=values.length;
+  const bw=(W-2*pad)/n;
+  const midY = pad + (H-2*pad)/2;
+  const scale = (H-2*pad)/2 / maxAbs;
+  const yUpper = midY - crit*scale;
+  const yLower = midY + crit*scale;
+  let svg=`<svg viewBox="0 0 ${W} ${H}">
+    <rect x="0" y="0" width="${W}" height="${H}" fill="rgba(255,255,255,0.02)" rx="12"></rect>
+    <text x="${pad}" y="22" fill="#cfe0ff" font-size="14" font-weight="600">${title}</text>
+    <line x1="${pad}" y1="${midY}" x2="${W-pad}" y2="${midY}" stroke="rgba(255,255,255,0.22)"/>
+    <line x1="${pad}" y1="${pad}" x2="${pad}" y2="${H-pad}" stroke="rgba(255,255,255,0.15)"/>
+    <line x1="${pad}" y1="${yUpper}" x2="${W-pad}" y2="${yUpper}" stroke="rgba(255,255,255,0.25)" stroke-dasharray="6,6"/>
+    <line x1="${pad}" y1="${yLower}" x2="${W-pad}" y2="${yLower}" stroke="rgba(255,255,255,0.25)" stroke-dasharray="6,6"/>
+    <text x="${W-pad}" y="${yUpper-6}" fill="rgba(233,238,252,0.65)" font-size="11" text-anchor="end">+${crit.toFixed(3)}</text>
+    <text x="${W-pad}" y="${yLower+14}" fill="rgba(233,238,252,0.65)" font-size="11" text-anchor="end">-${crit.toFixed(3)}</text>
+  `;
+  for(let i=0;i<n;i++){
+    const v=values[i];
+    const h = v * scale;
+    const x=pad+i*bw+2;
+    const y = (h>=0) ? (midY - h) : midY;
+    const hh = Math.abs(h);
+    const sig = Math.abs(v) > crit;
+    const fill = sig ? "rgba(122,162,255,0.85)" : "rgba(122,162,255,0.45)";
+    svg+=`<rect x="${x}" y="${y}" width="${bw-4}" height="${hh}" fill="${fill}"></rect>`;
+    if(n<=28){
+      svg+=`<text x="${x+(bw-4)/2}" y="${H-pad+16}" fill="rgba(233,238,252,0.75)" font-size="11" text-anchor="middle">${labels[i]}</text>`;
+    }
+  }
+  svg+='</svg>';
+  document.getElementById(containerId).innerHTML=svg;
+}
+
+function pearsonCorr(a, b){
+  const n = Math.min(a.length, b.length);
+  if(n <= 1) return 0;
+  const ma = mean(a.slice(0,n));
+  const mb = mean(b.slice(0,n));
+  let num = 0, da = 0, db = 0;
+  for(let i=0;i<n;i++){
+    const xa = a[i] - ma;
+    const xb = b[i] - mb;
+    num += xa * xb;
+    da += xa * xa;
+    db += xb * xb;
+  }
+  if(da <= 0 || db <= 0) return 0;
+  return num / Math.sqrt(da * db);
+}
+
+function acfExcelCompatible(x, maxLag){
+  const n = x.length;
+  const out = [1];
+  for(let lag=1; lag<=maxLag; lag++){
+    out.push(pearsonCorr(x.slice(0, n-lag), x.slice(lag)));
+  }
+  return out;
+}
+
+function aggregateByDow(series){
+  const map = new Map(DOW_ORDER.map(d=>[d,[]]));
+  for(const row of series) map.get(row.dow).push(Number(row.fires));
+  return DOW_ORDER.map((dow, i)=>({
+    dow, label:DOW_LABELS[i], values: map.get(dow),
+    mean: mean(map.get(dow)),
+    sum: map.get(dow).reduce((a,b)=>a+b,0)
+  }));
+}
+function expandWeeklyProfileToDaily(seriesByYearDow, weeksPerYear=52, noiseRel=0.03, seed=12345){
+  const rng = mulberry32(seed);
+  const byYear = new Map();
+  for(const d of seriesByYearDow){
+    const y = Number(d.year);
+    if(!byYear.has(y)) byYear.set(y, []);
+    byYear.get(y).push(Number(d.fires));
+  }
+  const years = [...byYear.keys()].sort((a,b)=>a-b);
+  const out = [];
+  for(const y of years){
+    const week = byYear.get(y);
+    for(let w=0; w<weeksPerYear; w++){
+      for(let i=0; i<7; i++){
+        const base = week[i];
+        const eps = (rng()*2 - 1) * noiseRel;
+        out.push(base * (1 + eps));
+      }
+    }
+  }
+  return out;
+}
+
+function genGridCounts(rng,totalCalls,hotspot=false){
+  const cells=100;
+  const counts=new Array(cells).fill(0);
+  if(!hotspot){
+    for(let i=0;i<totalCalls;i++) counts[randInt(rng,cells)]++;
+  }else{
+    const weights=new Array(cells).fill(1);
+    const hot=[22,23,32,33,44,45,54,55,77,78];
+    hot.forEach(i=>weights[i]=5);
+    const sumW=weights.reduce((a,b)=>a+b,0);
+    const cdf=[]; let acc=0;
+    for(let i=0;i<cells;i++){ acc+=weights[i]/sumW; cdf.push(acc); }
+    for(let i=0;i<totalCalls;i++){
+      const u=rng();
+      let idx=cdf.findIndex(v=>v>=u); if(idx<0) idx=cells-1;
+      counts[idx]++; 
+    }
+  }
+  return counts;
+}
+function freqFromCounts(counts){
+  const freq=new Map();
+  for(const c of counts) freq.set(c,(freq.get(c)||0)+1);
+  const ks=[...freq.keys()].sort((a,b)=>a-b);
+  return ks.map(k=>({k, cells:freq.get(k)}));
+}
+
+const FACT=[1];
+for(let i=1;i<=60;i++) FACT[i]=FACT[i-1]*i;
+function poissonPMF(k,lambda){
+  if(k<0) return 0;
+  if(k<=60) return Math.exp(-lambda)*Math.pow(lambda,k)/FACT[k];
+  const kk=k;
+  const logfact = kk*Math.log(kk) - kk + 0.5*Math.log(2*Math.PI*kk);
+  const logp = -lambda + k*Math.log(lambda) - logfact;
+  return Math.exp(logp);
+}
+function groupForChiSquare(ksObs, obsCounts, expCounts, minE=5){
+  let groups=ksObs.map((k,i)=>({label:String(k), O:obsCounts[i], E:expCounts[i]}));
+  function hasSmall(){ return groups.some(g=>g.E<minE); }
+  while(hasSmall() && groups.length>2){
+    let idx=-1;
+    for(let i=groups.length-1;i>=0;i--){ if(groups[i].E<minE){ idx=i; break; } }
+    if(idx<=0){
+      groups[0]={label:`${groups[0].label}–${groups[1].label}`, O:groups[0].O+groups[1].O, E:groups[0].E+groups[1].E};
+      groups.splice(1,1);
+    }else{
+      groups[idx-1]={label:`${groups[idx-1].label}–${groups[idx].label}`, O:groups[idx-1].O+groups[idx].O, E:groups[idx-1].E+groups[idx].E};
+      groups.splice(idx,1);
+    }
+  }
+  return groups;
+}
+
+function erlangCDF(t,k,lambda){
+  if(!isFinite(t)) return 1.0;
+  if(t<=0) return 0.0;
+  const lt=lambda*t;
+  let s=0;
+  for(let j=0;j<=k-1;j++) s += Math.pow(lt,j)/FACT[j];
+  return 1 - Math.exp(-lt)*s;
+}
+function sampleExponential(rng, lambda){
+  let u=rng(); if(u<=0) u=1e-12;
+  return -Math.log(u)/lambda;
+}
+function sampleErlang(rng,k,lambda){
+  let s=0; for(let i=0;i<k;i++) s += sampleExponential(rng,lambda);
+  return s;
+}
+function sampleErlangTruncated(rng,k,lambda,tmax){
+  for(let tries=0;tries<10000;tries++){
+    const x=sampleErlang(rng,k,lambda);
+    if(x<=tmax) return x;
+  }
+  return tmax;
+}
+function makeIntervals(bounds){
+  const intervals=[]; for(let i=0;i<bounds.length-1;i++) intervals.push({a:bounds[i], b:bounds[i+1]});
+  return intervals;
+}
+function countInIntervals(values, intervals){
+  const O=new Array(intervals.length).fill(0);
+  for(const v of values){
+    for(let i=0;i<intervals.length;i++){
+      const it=intervals[i];
+      const last=(i===intervals.length-1);
+      if(last){ if(v>=it.a && v<=it.b){ O[i]++; break; } }
+      else { if(v>=it.a && v<it.b){ O[i]++; break; } }
+    }
+  }
+  return O;
+}
+function expectedForErlang(intervals, N, k, lambda, tmax=null){
+  let norm=1.0;
+  if(tmax!==null) norm = erlangCDF(tmax,k,lambda);
+  const E=[];
+  for(const it of intervals){
+    const p=(erlangCDF(it.b,k,lambda) - erlangCDF(it.a,k,lambda))/norm;
+    E.push(N*p);
+  }
+  return E;
+}
+function chiSquare(O,E){
+  let chi=0;
+  for(let i=0;i<O.length;i++) chi += (O[i]-E[i])*(O[i]-E[i])/(E[i]||1e-9);
+  return chi;
+}
+const CHI2_CRIT_005 = {"1": 3.841, "2": 5.991, "3": 7.815, "4": 9.488, "5": 11.07, "6": 12.592, "7": 14.067, "8": 15.507, "9": 16.919, "10": 18.307, "11": 19.675, "12": 21.026, "13": 22.362, "14": 23.685, "15": 24.996, "16": 26.296, "17": 27.587, "18": 28.869, "19": 30.144, "20": 31.41, "21": 32.671, "22": 33.924, "23": 35.172, "24": 36.415, "25": 37.652, "26": 38.885, "27": 40.113, "28": 41.337, "29": 42.557, "30": 43.773};
+function chi2crit(df){ return CHI2_CRIT_005[df] || null; }
+
+let csv1="", csv2grid="", csv2freq="", csv3="";
+
+function buildSection2Base(cfg){
+  const rng=mulberry32(cfg.seed2);
+  const counts=genGridCounts(rng, cfg.totalCalls, cfg.hotspot===1);
+  const gridRows=[];
+  for(let r=0;r<10;r++){
+    const row=[];
+    for(let c=0;c<10;c++) row.push(counts[r*10+c]);
+    gridRows.push(row);
+  }
+  const gridTable=renderTable(document.getElementById('s2grid'), [...Array(10)].map((_,i)=>'C'+(i+1)), gridRows);
+  csv2grid = tableToCSV(gridTable);
+
+  const freq=freqFromCounts(counts);
+  const freqTable=renderTable(document.getElementById('s2freq'), ['k','Число участков'], freq.map(o=>[o.k,o.cells]));
+  csv2freq = tableToCSV(freqTable);
+
+  const lambda = cfg.totalCalls/100;
+  document.getElementById('s2kpi').innerHTML = `
+    <div class="pill"><small>Всего выездов</small><b>${cfg.totalCalls}</b></div>
+    <div class="pill"><small>Участков</small><b>100</b></div>
+    <div class="pill"><small>λ = N/100</small><b>${lambda.toFixed(3)}</b></div>
+    <div class="pill"><small>Сценарий</small><b>${cfg.hotspot===1?'горячие зоны':'равномерно'}</b></div>
+  `;
+  return {counts, freq, lambda};
+}
+
+function buildSection3Base(cfg){
+  const N=100;
+  const rng=mulberry32(cfg.seed3);
+
+  const k0=1,k1=2,k2=3,k3=4;
+  const lam0=k0/cfg.meanT0, lam1=k1/cfg.meanT1, lam2=k2/cfg.meanT2, lam3=k3/cfg.meanT3;
+
+  const Tmax1=1.0, Tmax2=1.0, Tmax3=10.0;
+  const T0=[...Array(N)].map(()=>sampleErlang(rng,k0,lam0));
+  const T1=[...Array(N)].map(()=>sampleErlangTruncated(rng,k1,lam1,Tmax1));
+  const T2=[...Array(N)].map(()=>sampleErlangTruncated(rng,k2,lam2,Tmax2));
+  const T3=[...Array(N)].map(()=>sampleErlangTruncated(rng,k3,lam3,Tmax3));
+
+  const I0=makeIntervals([0,15,30,45,60,90,Infinity]);
+  const I1=makeIntervals([0,0.15,0.25,0.35,0.45,0.55,1.0]);
+  const I2=makeIntervals([0,0.205,0.305,0.414,0.571,0.710,1.0]);
+  const I3=makeIntervals([0,3.0,4.0,5.5,7.0,8.5,10.0]);
+
+  const tables=[
+    {key:'T0', name:'T₀ — обслуживание вызова, мин', values:T0, intervals:I0, tmax:null},
+    {key:'T1', name:'T₁ — диспетчеризация, мин (≤1)', values:T1, intervals:I1, tmax:Tmax1},
+    {key:'T2', name:'T₂ — сбор и выезд, мин (≤1)', values:T2, intervals:I2, tmax:Tmax2},
+    {key:'T3', name:'T₃ — следование, мин (≤10)', values:T3, intervals:I3, tmax:Tmax3},
+  ];
+
+  const out=document.getElementById('s3out');
+  out.innerHTML='';
+  const csvLines=['Показатель;Интервал;O_i'];
+  const fmtInt=(a,b,last)=>!isFinite(b)?`[${a};∞)`:`[${a};${b}${last?']':')'}`;
+  for(const t of tables){
+    const O=countInIntervals(t.values, t.intervals);
+    t.O = O;
+    const rows=t.intervals.map((it,idx)=>[fmtInt(it.a,it.b,idx===t.intervals.length-1), O[idx]]);
+    const box=document.createElement('div');
+    box.className='card'; box.style.background='rgba(0,0,0,.12)'; box.style.borderColor='rgba(255,255,255,.08)';
+    box.innerHTML=`<h4 style="margin:0 0 6px 0;">${t.name}: интервалы и эмпирические частоты Oᵢ</h4><div id="tbl_${t.key}"></div>`;
+    out.appendChild(box);
+    renderTable(box.querySelector(`#tbl_${t.key}`), ['Интервал','Oᵢ'], rows);
+    rows.forEach(r=>csvLines.push(`${t.name};${r[0]};${r[1]}`));
+  }
+  csv3 = csvLines.join("\n");
+  document.getElementById('s3kpi').innerHTML = `
+    <div class="pill"><small>N</small><b>100</b></div>
+    <div class="pill"><small>Среднее T₀</small><b>${cfg.meanT0}</b></div>
+    <div class="pill"><small>Среднее T₁</small><b>${cfg.meanT1}</b></div>
+    <div class="pill"><small>Среднее T₂</small><b>${cfg.meanT2}</b></div>
+    <div class="pill"><small>Среднее T₃</small><b>${cfg.meanT3}</b></div>
+  `;
+  return tables;
+}
+
+
+const sel=document.getElementById('variantTop');
+const grid=document.getElementById('variantGrid');
+for(let i=1;i<=30;i++){
+  const opt=document.createElement('option');
+  opt.value=String(i); opt.textContent=String(i);
+  sel.appendChild(opt);
+  const b=document.createElement('button');
+  b.className='variant-btn'; b.type='button'; b.textContent=String(i);
+  b.addEventListener('click', ()=>setVariant(i));
+  grid.appendChild(b);
+}
+function markActive(v){
+  [...grid.querySelectorAll('.variant-btn')].forEach((btn,idx)=>{
+    btn.classList.toggle('active', (idx+1)===v);
+  });
+}
+
+function buildSection1(v){
+  const series = SECTION1_VARIANTS[String(v)];
+  const rows = series.map((d,i)=>[i+1, d.label, Math.round(d.fires)]);
+  const t = renderTable(document.getElementById('s1out'), ['№','Период','Количество пожаров'], rows);
+  csv1 = tableToCSV(t);
+
+  const profile = aggregateByDow(series);
+  const means = profile.map(p=>p.mean);
+  const weekdayValues = profile.slice(0,5).flatMap(p=>p.values);
+  const weekendValues = profile.slice(5).flatMap(p=>p.values);
+  const weekdayMean = mean(weekdayValues);
+  const weekendMean = mean(weekendValues);
+  const weekendGrowthPct = ((weekendMean/weekdayMean)-1)*100;
+  const peak = profile.reduce((a,b)=>a.mean>b.mean?a:b);
+  const minDay = profile.reduce((a,b)=>a.mean<b.mean?a:b);
+
+  // Excel-совместимый расчет ACF: по исходным 21 значениям через парную корреляцию сдвинутых рядов
+  const x = series.map(d=>Number(d.fires));
+  const maxLag = Math.min(10, x.length - 1);
+  const acf = acfExcelCompatible(x, maxLag);
+  const N = x.length;
+  const crit = 1.96 / Math.sqrt(N);
+
+  document.getElementById('s1profile').innerHTML = '';
+  renderTable(
+    document.getElementById('s1profile'),
+    ['День недели','Среднее за 3 года','Тип дня'],
+    profile.map((p, idx)=>[p.label, Math.round(p.mean), idx>=5 ? 'выходной' : 'будний'])
+  );
+  document.getElementById('s1profile').insertAdjacentHTML('beforeend', `
+    <div class="kpi" style="margin-top:8px;">
+      <div class="pill"><small>Среднее будни</small><b>${Math.round(weekdayMean)}</b></div>
+      <div class="pill"><small>Среднее выходные</small><b>${Math.round(weekendMean)}</b></div>
+      <div class="pill"><small>Рост выходные / будни</small><b>${weekendGrowthPct.toFixed(1)}%</b></div>
+      <div class="pill"><small>Пиковый день</small><b>${peak.label}</b></div>
+      <div class="pill"><small>Минимум</small><b>${minDay.label}</b></div>
+    </div>
+    <div class="note" style="margin-top:8px;">
+      Профиль по дням недели показывает повышение числа пожаров к концу недели и более высокий средний уровень в выходные дни.
+    </div>
+  `);
+
+  renderTable(
+    document.getElementById('s1acfTable'),
+    ['Лаг','r(лаг)','Значим?','Граница','Примечание'],
+    acf.map((r,lag)=>[
+      lag,
+      r.toFixed(4),
+      lag===0 ? '—' : (Math.abs(r)>crit ? 'ДА' : 'нет'),
+      lag===0 ? '—' : crit.toFixed(4),
+      lag===7 ? 'неделя' : ''
+    ])
+  );
+  document.getElementById('s1acfTable').insertAdjacentHTML('beforeend', `
+    <div class="note" style="margin-top:8px;">
+      ACF рассчитана <b>как в Excel</b>: по исходным 21 значениям и через парную корреляцию сдвинутых рядов (аналог функции CORREL).
+      Поэтому коэффициенты могут быть как положительными, так и отрицательными.
+    </div>
+  `);
+
+  renderBarSVG('s1profilePlot', means, DOW_LABELS, 'Среднее число пожаров по дням недели');
+  renderACFPlotWithBands(
+    's1acfPlot',
+    acf.slice(1),
+    acf.slice(1).map((_,i)=>String(i+1)),
+    `Коррелограмма ACF (лаги 1–${maxLag}, N=${N})`,
+    crit
+  );
+}
+
+function buildSection2(cfg){
+  const {counts, freq, lambda} = buildSection2Base(cfg);
+  const kmax=Math.max(...counts);
+  const ks=[], O=[], E=[];
+  for(let k=0;k<=kmax;k++){
+    const obs=freq.find(o=>o.k===k);
+    ks.push(k);
+    O.push(obs?obs.cells:0);
+    E.push(100*poissonPMF(k,lambda));
+  }
+  let psum=0; for(let k=0;k<=kmax;k++) psum+=poissonPMF(k,lambda);
+  const pTail=1-psum;
+  if(pTail>1e-10) E[E.length-1]+=100*pTail;
+  const groups=groupForChiSquare(ks,O,E,5);
+  let chi=0;
+  const rows=groups.map(g=>{
+    const contrib=(g.O-g.E)*(g.O-g.E)/(g.E||1e-9);
+    chi+=contrib;
+    return [g.label, g.O, g.E.toFixed(2), contrib.toFixed(3)];
+  });
+  const df=groups.length-1-1;
+  const crit=chi2crit(df);
+  const decision=(crit!==null && chi<=crit) ? 'не отвергается' : 'отвергается';
+  rows.push(['ИТОГО','','',chi.toFixed(3)]);
+  renderTable(document.getElementById('s2chi'), ['Группа k','O','E','(O−E)²/E'], rows);
+  document.getElementById('s2chi').insertAdjacentHTML('beforeend', `
+    <div class="kpi" style="margin-top:8px;">
+      <div class="pill"><small>ν</small><b>${df}</b></div>
+      <div class="pill"><small>χ²</small><b>${chi.toFixed(3)}</b></div>
+      <div class="pill"><small>χ²кр</small><b>${crit!==null?crit.toFixed(3):'—'}</b></div>
+      <div class="pill"><small>Решение</small><b>${decision}</b></div>
+    </div>
+  `);
+}
+
+function buildSection3(cfg){
+  const tables = buildSection3Base(cfg);
+  const summaryRows=[];
+  const chiDiv=document.getElementById('s3chiTables');
+  chiDiv.innerHTML='';
+  for(const t of tables){
+    const avg=t.values.reduce((a,b)=>a+b,0)/t.values.length;
+    const O=t.O;
+    const df=t.intervals.length-1-1;
+    const crit=chi2crit(df);
+    let best=null;
+    const perK=[];
+    for(let k=1;k<=4;k++){
+      const lambda=k/avg;
+      const E=expectedForErlang(t.intervals, 100, k, lambda, t.tmax);
+      const chi=chiSquare(O,E);
+      const ok=(crit!==null && chi<=crit);
+      perK.push({k,lambda,chi,ok});
+      if(ok && (!best || chi<best.chi)) best={k,lambda,chi};
+    }
+    summaryRows.push([t.name, avg.toFixed(4), best?best.k:'—', best?best.lambda.toFixed(6):'—', best?best.chi.toFixed(3):'—', df, crit!==null?crit.toFixed(3):'—', best?'не отвергается':'нет k']);
+    const wrap=document.createElement('div');
+    wrap.className='card'; wrap.style.background='rgba(0,0,0,.12)'; wrap.style.borderColor='rgba(255,255,255,.08)';
+    wrap.innerHTML=`<h4 style="margin:0 0 6px 0;">${t.name}: χ² по кандидатам k=1..4</h4><div id="chi_${t.key}"></div>`;
+    chiDiv.appendChild(wrap);
+    renderTable(wrap.querySelector(`#chi_${t.key}`), ['k','λ̂','χ²','Решение'],
+      perK.map(r=>[r.k, r.lambda.toFixed(6), r.chi.toFixed(3), r.ok?'OK':'отверг.']));
+  }
+  renderTable(document.getElementById('s3summary'),
+    ['Показатель','T̄','k*','λ̂*','χ²(k*)','ν','χ²кр','Вывод'],
+    summaryRows
+  );
+}
+
+function buildKit(){
+  const v=parseInt(sel.value,10);
+  document.getElementById('curVar').textContent=String(v);
+  markActive(v);
+  const cfg=VARIANT_CONFIGS.find(x=>Number(x.variant)===v);
+  if(!cfg){ alert('Не найден конфиг для варианта '+v); return; }
+  buildSection1(v);
+  buildSection2(cfg);
+  buildSection3(cfg);
+}
+function setVariant(v){
+  sel.value=String(v);
+  buildKit();
+}
+document.getElementById('btnKit').addEventListener('click', buildKit);
+sel.addEventListener('change', buildKit);
+sel.addEventListener('input', buildKit);
+document.getElementById('btnCSV').addEventListener('click', ()=>{
+  if(!csv1) buildKit();
+  downloadText(`Вариант_${sel.value}_Раздел1_Ряд.csv`, csv1);
+  downloadText(`Вариант_${sel.value}_Раздел2_Матрица_10x10.csv`, csv2grid);
+  downloadText(`Вариант_${sel.value}_Раздел2_Частоты.csv`, csv2freq);
+  downloadText(`Вариант_${sel.value}_Раздел3_Oi.csv`, csv3);
+});
+document.getElementById('btnPrint').addEventListener('click', ()=>window.print());
+setVariant(1);
+
+</script>
+</body>
+</html>
